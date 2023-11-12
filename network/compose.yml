@@ -1,0 +1,157 @@
+version: '3'
+
+services:
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    restart: always
+    networks:
+      - public-net
+    ports:
+      - "80:80"
+      - "443:443"
+      # (Optional) Expose Dashboard
+      - "8080:8080"  # Don't do this in production!
+    volumes:
+      - ./traefikConf/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ${data_dir}/traefik:/etc/traefik
+      - /var/run/docker.sock:/var/run/docker.sock:ro      
+
+  portainer-ce:
+    image: portainer/portainer-ce:latest
+    container_name: portainer-ce
+    restart: always
+    networks:
+      - public-net
+    ports:
+      - 8000:8000
+      - 9000:9443
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro      
+      - '${data_dir}/portainer:/data'
+
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower  
+    restart: unless-stopped
+    networks:
+      - public-net
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_HTTP_API_TOKEN: "A#YU6!z%eKXrX8"
+      WATCHTOWER_HTTP_API_METRICS: "true"
+      WATCHTOWER_RUN_ONCE: "false"
+      WATCHTOWER_SCHEDULE: "0 9 * * *"
+      WATCHTOWER_NOTIFICATION_REPORT: "true" 
+      WATCHTOWER_NOTIFICATION_URL: ${watch_discord}
+      WATCHTOWER_NOTIFICATION_TEMPLATE: |
+        {{- with .Report -}}
+          {{- if or .Updated .Failed -}}
+            {{- range .Updated -}}
+        - {{.Name}} ({{.ImageName}}): {{.CurrentImageID.ShortID}} updated to {{.LatestImageID.ShortID}}
+            {{- end -}}
+            {{- range .Failed -}}
+        - {{.Name}} ({{.ImageName}}): {{.State}}: {{.Error}}
+            {{- end -}}
+          {{- end -}}
+        {{- end -}}
+
+
+  uptimekuma:
+    image: louislam/uptime-kuma:latest
+    container_name: uptimekuma
+    environment:
+      - TZ=Asia/Dhaka
+    volumes:
+      - ${data_dir}/uptime-kuma:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock  
+    ports:
+      - 3001:3001
+    restart: unless-stopped
+    networks:
+      - public-net
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.uptime.rule=Host(`uptime.home`)"
+    #   - "traefik.http.routers.uptime.entrypoints=web"    
+    #   - "traefik.http.services.uptime.loadbalancer.server.port=3001"
+
+
+  openspeed:
+    container_name: openspeed
+    image: openspeedtest/latest
+    ports:
+      - "3003:3000"
+      - "3002:3001"
+    environment:
+      - TZ=Asia/Dhaka        
+    restart: unless-stopped
+    networks:
+      - public-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.openspeed.rule=Host(`${public_ip}`, `${local_ip}`) && (PathPrefix(`/speed`) || PathPrefix(`/assets`) || PathPrefix(`/upload`) || PathPrefix(`/download`))"
+      - "traefik.http.routers.openspeed.entrypoints=web"
+      # - 'traefik.http.routers.openspeed.tls=true'
+      - "traefik.http.middlewares.openspeed-strip.stripprefix.prefixes=/speed"
+      - "traefik.http.routers.openspeed.middlewares=openspeed-strip"
+      - "traefik.http.services.openspeed.loadbalancer.server.port=3000"
+
+
+
+  speedtest-tracker:
+    container_name: speedtest-tracker
+    image: 'ghcr.io/alexjustesen/speedtest-tracker:latest'
+    environment:
+      - PUID=$(id -u)
+      - PGID=$(id -g)
+      - TZ=Asia/UTC                
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db-speed
+      - DB_PORT=5432
+      - DB_DATABASE=speedtest_tracker
+      - DB_USERNAME=speedy
+      - DB_PASSWORD=password
+    ports:
+      - "3009:80"      
+      - "3019:443"      
+    networks:
+      - public-net
+    volumes:
+      - '${data_dir}/speed/config:/config'
+      - '${data_dir}/speed/web:/etc/ssl/web'
+      - '/etc/localtime:/etc/localtime:ro'
+    restart: unless-stopped
+    depends_on:
+        - db-speed
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.speed.rule=Host(`speed.home`)"
+    
+  db-speed:
+    image: postgres:15
+    container_name: db-speed
+    restart: unless-stopped
+    networks:
+      - public-net
+    environment:
+      - POSTGRES_DB=speedtest_tracker
+      - POSTGRES_USER=speedy
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - '${data_dir}/speed/database:/var/lib/postgreql/data'
+
+
+
+
+networks:
+  public-net:
+    external: true
+    name: public-net
+
+
+

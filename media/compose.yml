@@ -1,0 +1,256 @@
+version: '3'
+
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    networks:
+      - public-net
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      # - JELLYFIN_PublishedServerUrl=http://192.168.0.120:8096
+      - TZ=Asia/Dhaka
+    volumes:
+      - ${data_dir}/jellyfin/config:/config
+      - ${data_dir}/jellyfin/cache:/cache
+      - ~/storage/public:/media
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+      - /dev/dri/card0:/dev/dri/card0    
+    labels:
+      - "traefik.enable=true"  
+      # https
+      - "traefik.http.routers.jellyfin.rule=Host(`${ngrok}`,`${public_ip}`, `${local_ip}`) && PathPrefix(`/movie`)"      
+      - "traefik.http.routers.jellyfin.entrypoints=websecure"      
+      - 'traefik.http.routers.jellyfin.tls=true'      
+      - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
+      # http
+      - "traefik.http.routers.jellyfin-insecure.rule=Host(`${ngrok}`,`${public_ip}`, `${local_ip}`) && PathPrefix(`/movie`)"      
+      - "traefik.http.routers.jellyfin-insecure.entrypoints=web"       
+
+      # - "traefik.http.services.jellyfin-insecure.loadbalancer.server.port=8096"
+      # - "traefik.http.services.jellyfin-insecure.loadbalancer.server.address=jellyfin"
+    ports:
+        - 8096:8096
+        - 8920:8920 #optional
+        - 7359:7359/udp #optional
+        # - 1900:1900/udp #optional
+    restart: unless-stopped
+
+
+
+  transmission:
+    image: lscr.io/linuxserver/transmission:latest
+    container_name: transmission
+    networks:
+      - public-net
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Asia/Dhaka
+      - TRANSMISSION_WEB_HOME=/transmissionic/ #optional
+      - USER=${USER_TRANS}
+      - PASS=${USER_PASS_TRANS}
+      - WHITELIST= #optional
+      - PEERPORT= #optional
+      - HOST_WHITELIST= #optional
+    volumes:
+      - ${data_dir}/transmission:/config
+      - ${TRANSMISSION_UI}:/transmissionic/
+      - ~/storage/public/downloads/:/downloads
+      - ~/storage/public/watchTorrents/:/watch
+    ports:
+      - 9091:9091
+      - 51413:51413
+      - 51413:51413/udp
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"  
+      - "traefik.http.routers.transmission.rule=Host(`${local_ip}`, `${public_ip}`) && PathPrefix(`/transmission`)"
+      - "traefik.http.routers.transmission.entrypoints=web"
+      - "traefik.http.services.transmission.loadbalancer.server.port=9091"    
+
+
+
+  radarr:
+    container_name: radarr
+    image: lscr.io/linuxserver/radarr:latest
+    networks:
+      - public-net
+    volumes:
+      - ~/storage/public/:/downloads
+      - ~/storage/public/movies:/movies
+      - ${data_dir}/radarr:/config
+    ports:
+      - 7878:7878
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Asia/Dhaka    
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"  
+      - "traefik.http.routers.radarr-insecure.rule=Host(`${public_ip}`, `${local_ip}`) && PathPrefix(`/radarr`)"      
+      - "traefik.http.routers.radarr-insecure.entrypoints=web"      
+      # https
+      - "traefik.http.routers.radarr.rule=Host(`${ngrok}`,  `${public_ip}`, `${local_ip}`) && PathPrefix(`/radarr`)"      
+      - "traefik.http.routers.radarr.entrypoints=websecure"      
+      # - "traefik.http.routers.radarr.middlewares=auth@file"      
+      - "traefik.http.services.radarr.loadbalancer.server.port=7878"
+      - 'traefik.http.routers.radarr.tls=true'            
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    networks:
+      - public-net
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Asia/Dhaka
+    volumes: 
+      - ${data_dir}/sonarr:/config
+      - ~/storage/public/:/tv #optional
+      - ~/storage/public/:/downloads #optional
+    ports:
+      - 8989:8989
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"  
+      - "traefik.http.routers.sonarr-insecure.rule=Host(`${public_ip}`, `${local_ip}`) && PathPrefix(`/sonarr`)"      
+      - "traefik.http.routers.sonarr-insecure.entrypoints=web"      
+      # https
+      - "traefik.http.routers.sonarr.rule=Host(`${ngrok}`, `${public_ip}`, `${local_ip}`) && PathPrefix(`/sonarr`)"      
+      - "traefik.http.routers.sonarr.entrypoints=websecure"      
+      # - "traefik.http.routers.sonarr.middlewares=auth@file"      
+      - "traefik.http.services.sonarr.loadbalancer.server.port=8989"
+      - 'traefik.http.routers.sonarr.tls=true'            
+
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:develop
+    container_name: prowlarr
+    networks:
+      - public-net
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Asia/Dhaka
+    volumes:
+      - ${data_dir}/prowlarr:/config
+    ports:
+      - 9696:9696
+    restart: unless-stopped
+    # labels:
+    #   - "traefik.enable=true"  
+    #   - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.home`)"      
+    #   - "traefik.http.routers.prowlarr.entrypoints=web"      
+    #   - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"    
+
+  flaresolverr:
+    # DockerHub mirror flaresolverr/flaresolverr:latest
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    networks:
+      - public-net
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_HTML=${LOG_HTML:-false}
+      - CAPTCHA_SOLVER=${CAPTCHA_SOLVER:-none}
+      - TZ=Asia/Dhaka
+    ports:
+      - "${PORT:-8191}:8191"
+    restart: unless-stopped         
+
+  navidrome:
+    container_name: navidrome
+    image: deluan/navidrome:latest
+    user: "${PUID}:${PGID}" # should be owner of volumes
+    ports:
+      - 4533:4533
+    restart: unless-stopped
+    networks:
+      - public-net
+    environment:
+    # Optional: put your config options customization here. Examples
+      # - ND_SCANSCHEDULE: 1h
+      # - ND_LOGLEVEL: info  
+      # - ND_SESSIONTIMEOUT= 24h
+      - ND_BASEURL=/navmusic
+    volumes:
+      - ${data_dir}/navidrome:/data
+      - ~/storage/public/audio/songs/:/music:ro
+    labels:
+      - "traefik.enable=true"  
+      - "traefik.http.routers.navidrome-insecure.rule=Host(`${local_ip}`, `${public_ip}`) && PathPrefix(`/navmusic`)"      
+      - "traefik.http.routers.navidrome-insecure.entrypoints=web"
+      # https
+      - "traefik.http.routers.navidrome.rule=Host(`${ngrok}`, `${local_ip}`, `${public_ip}`) && PathPrefix(`/navmusic`)"      
+      - "traefik.http.routers.navidrome.entrypoints=websecure"
+      - "traefik.http.services.navidrome.loadbalancer.server.port=4533"      
+      - 'traefik.http.routers.navidrome.tls=true'      
+
+
+  filebrowser-media:
+    image: filebrowser/filebrowser:s6
+    restart: unless-stopped
+    container_name: filebrowser-media
+    networks:
+      - public-net
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Asia/Dhaka
+      - FB_BASEURL=/media
+    ports:
+      - 6760:80
+    volumes:
+      - ~/storage/public/:/srv
+      - ${data_dir}/filebrowser-media/filebrowser.db:/database/filebrowser.db
+      - ${data_dir}/filebrowser-media/settings.json:/config/settings.json
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.fb-media.rule=Host(`${public_ip}`, `${local_ip}`) && PathPrefix(`/media`)"
+      - "traefik.http.routers.fb-media.entrypoints=web"
+      # - "traefik.http.services.fb-media.loadbalancer.server.port=80"      
+      # https
+      - "traefik.http.routers.fb-secure-media.rule=Host(`${ngrok}`, `${public_ip}`, `${local_ip}`) && PathPrefix(`/media`)"      
+      - "traefik.http.routers.fb-secure-media.entrypoints=websecure"
+      # - "traefik.http.services.fb-secure-media.loadbalancer.server.port=80"      
+      - 'traefik.http.routers.fb-secure-media.tls=true'      
+
+
+  filebrowser-media-private:
+    image: filebrowser/filebrowser:s6
+    restart: unless-stopped
+    networks:
+      - public-net
+    container_name: filebrowser-media-private
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Asia/Dhaka
+      - FB_BASEURL=/private-media
+    ports:
+      - 3710:80
+    volumes:
+      - ~/storage/private:/srv
+      - ${data_dir}/filebrowser-media-private/filebrowser.db:/database/filebrowser.db
+      - ${data_dir}/filebrowser-media-private/settings.json:/config/settings.json
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.fb-media-private.rule=Host(`${ngrok}`, `${public_ip}`, `${local_ip}`) && PathPrefix(`/private-media`)"      
+      - "traefik.http.routers.fb-media-private.entrypoints=web"
+      # https
+      - "traefik.http.routers.fb-secure-media-private.rule=Host(`${ngrok}`, `${public_ip}`, `${local_ip}`) && PathPrefix(`/private-media`)"      
+      - "traefik.http.routers.fb-secure-media-private.entrypoints=websecure"
+      # - "traefik.http.services.fb-secure-media.loadbalancer.server.port=80"      
+      - 'traefik.http.routers.fb-secure-media-private.tls=true'      
+
+
+networks:
+  public-net:
+    external: true
+    name: public-net
+
