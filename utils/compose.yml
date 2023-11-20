@@ -65,29 +65,29 @@ services:
 
 
 
-  neko-chromium:
-    container_name: neko-chromium
-    image: m1k1o/neko:chromium
-    restart: "unless-stopped"
-    networks:
-      - public-net
-    shm_size: "2gb"   
-    cap_add:
-        - SYS_ADMIN
-    ports:
-        - "7777:8080"
-        - "8081:8081/tcp"
-        - "8082:8082/udp"
-    environment:
-        NEKO_IMPLICIT_CONTROL: true
-        NEKO_FILE_TRANSFER_ENABLED: true
-        NEKO_FILE_TRANSFER_PATH: /home/neko/Downloads
-        NEKO_SCREEN: "1024×576@30"	
-        NEKO_PASSWORD: neko
-        NEKO_PASSWORD_ADMIN: admin
-        NEKO_TCPMUX: 8081
-        NEKO_UDPMUX: 8082
-        NEKO_ICELITE: 1
+  # neko-kde:
+  #   container_name: neko-kde
+  #   image: m1k1o/neko:kde
+  #   restart: "unless-stopped"
+  #   networks:
+  #     - public-net
+  #   shm_size: "2gb"   
+  #   cap_add:
+  #       - SYS_ADMIN
+  #   ports:
+  #       - "7777:8080"
+  #       - "8081:8081/tcp"
+  #       - "8082:8082/udp"
+  #   environment:
+  #       NEKO_IMPLICIT_CONTROL: true
+  #       NEKO_FILE_TRANSFER_ENABLED: true
+  #       NEKO_FILE_TRANSFER_PATH: /home/neko/Downloads
+  #       NEKO_SCREEN: '1920x1080@30'
+  #       NEKO_PASSWORD: neko
+  #       NEKO_PASSWORD_ADMIN: admin
+  #       NEKO_TCPMUX: 8081
+  #       NEKO_UDPMUX: 8082
+  #       NEKO_ICELITE: 1
 
   pairdrop:
     image: lscr.io/linuxserver/pairdrop:latest
@@ -108,6 +108,7 @@ services:
 
   blaze:
     container_name: blaze
+    restart: unless-stopped
     networks:
       - public-net
     image: akashhamirwasia/blaze:latest
@@ -129,8 +130,8 @@ services:
       - ${data_dir}/couchdb:/opt/couchdb/data
     restart: always
     environment:
-      - COUCHDB_USER=saurav
-      - COUCHDB_PASSWORD=jinglebell
+      - COUCHDB_USER=${COUCHDB_USER}
+      - COUCHDB_PASSWORD=${COUCHDB_PASSWORD}
 
 
   nginx:
@@ -177,6 +178,7 @@ services:
   #   #   - "traefik.http.routers.homeassistant.rule=Host(`homeassistant.home`)"      
   #   #   - "traefik.http.routers.homeassistant.entrypoints=web"
   #   #   - "traefik.http.services.homeassistant.loadbalancer.server.homeassistant=http://192.168.0.120:8123"
+
 
 
 

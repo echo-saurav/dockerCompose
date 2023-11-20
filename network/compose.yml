@@ -146,8 +146,49 @@ services:
       - '${data_dir}/speed/database:/var/lib/postgreql/data'
 
 
+  monocker:
+    container_name: monocker
+    image: petersem/monocker
+    environment:
+      # Optional label to preface messages. Handy if you are running multiple versions of Monocker
+      SERVER_LABEL: 'Dev'
+      # Specify the messaging platform and details, or leave blank if only wanting container logs (pick one only)
+      # MESSAGE_PLATFORM: 'telegram@your_bot_id@your_chat_id'
+      # MESSAGE_PLATFORM: 'pushbullet@your_api_key@your_device_id'
+      # MESSAGE_PLATFORM: 'pushover@your_user_key@your_app_api_token'
+      # MESSAGE_PLATFORM: 'discord@webhook_url'
+      MESSAGE_PLATFORM: ${DISCORD_MONOCKER}
+      # Optional - includes or excludes specified containers - default behaviour is false
+      LABEL_ENABLE: 'false'
+      # Optional - only show when container state changes to being offline (paused, exited, running (unhealthy), or dead) - default is false
+      ONLY_OFFLINE_STATES: 'false'
+      # Optional - regardless of any other settings, you can ignore or include 'exited'
+      EXCLUDE_EXITED: 'false'      
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
 
+  dockge:
+    image: louislam/dockge:1
+    restart: unless-stopped
+    ports:
+      # Host Port:Container Port
+      - 5001:5001
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${data_dir}/dockge:/app/data
+        
+      # If you want to use private registries, you need to share the auth file with Dockge:
+      # - /root/.docker/:/root/.docker
 
+      # Your stacks directory in the host (The paths inside container must be the same as the host)
+      # ⚠️⚠️ If you did it wrong, your data could end up be written into a wrong path.
+      # ✔️✔️✔️✔️ CORRECT EXAMPLE: - /my-stacks:/my-stacks (Both paths match)
+      # ❌❌❌❌ WRONG EXAMPLE: - /docker:/my-stacks (Both paths do not match)
+      - ./stacks:/opt/stacks
+    environment:
+      # Tell Dockge where is your stacks directory
+      - DOCKGE_STACKS_DIR=/opt/stachoppscotch_postgres
 networks:
   public-net:
     external: true

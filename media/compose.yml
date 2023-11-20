@@ -50,8 +50,8 @@ services:
       - PGID=${PGID}
       - TZ=Asia/Dhaka
       - TRANSMISSION_WEB_HOME=/transmissionic/ #optional
-      - USER=${USER_TRANS}
-      - PASS=${USER_PASS_TRANS}
+      # - USER=${USER_TRANS}
+      # - PASS=${USER_PASS_TRANS}
       - WHITELIST= #optional
       - PEERPORT= #optional
       - HOST_WHITELIST= #optional
@@ -67,7 +67,7 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"  
-      - "traefik.http.routers.transmission.rule=Host(`${local_ip}`, `${public_ip}`) && PathPrefix(`/transmission`)"
+      - "traefik.http.routers.transmission.rule=Host(`${local_ip}`) && PathPrefix(`/transmission`)"
       - "traefik.http.routers.transmission.entrypoints=web"
       - "traefik.http.services.transmission.loadbalancer.server.port=9091"    
 
@@ -247,6 +247,22 @@ services:
       - "traefik.http.routers.fb-secure-media-private.entrypoints=websecure"
       # - "traefik.http.services.fb-secure-media.loadbalancer.server.port=80"      
       - 'traefik.http.routers.fb-secure-media-private.tls=true'      
+
+
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf
+    container_name: audiobookshelf
+    ports:
+      - 13378:80
+    volumes:
+      - ~/storage/public/audio/audiobooks:/audiobooks
+      - ~/storage/public/audio/podcasts:/podcasts
+      - ${data_dir}/audiobookshelf/metadata:/metadata
+      - ${data_dir}/audiobookshelf/config:/config
+    restart: unless-stopped
+    networks:
+      - public-net
+    
 
 
 networks:
