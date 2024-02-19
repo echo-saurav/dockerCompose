@@ -1,0 +1,42 @@
+version: "2"
+
+services:
+  ytdl_material:
+    container_name: youtube-dl-private
+    network_mode: "container:gluetun-private"
+    restart: unless-stopped
+    environment: 
+      ytdl_use_local_db: 'true'
+      write_ytdl_config: 'true'
+      UID: $(UID)
+      GID: $(GID)
+    volumes:
+      - ./appdata:/app/appdata
+      - ~/storage/private/privateFiles/youtube-dl:/app/video
+      - ./users:/app/users
+    image: tzahi12345/youtubedl-material:latest
+
+  gluetun:
+    image: qmcgaw/gluetun
+    restart: unless-stopped
+    container_name: gluetun-private
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      - 8888:8888/tcp # HTTP proxy
+      - 8388:8388/tcp # Shadowsocks
+      - 8388:8388/udp # Shadowsocks
+      - 17442:17442
+      - 2323:27017
+    volumes:
+      - ./gluetun:/gluetun
+    environment:
+      - VPN_SERVICE_PROVIDER=protonvpn
+      - OPENVPN_USER=${VPN_USER}
+      - OPENVPN_PASSWORD=${VPN_PASS}
+      - SERVER_COUNTRIES=Japan
+      - TZ=Asia/Dhaka
+      - UPDATER_PERIOD=
+

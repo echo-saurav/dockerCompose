@@ -1,0 +1,24 @@
+# version: '3'
+
+# services:
+#   duplicati:
+#     image: lscr.io/linuxserver/duplicati:latest
+#     container_name: duplicati
+#     environment:
+#       - PUID=$(UID)
+#       - PGID=$(GID)
+#       - TZ=Asia/Dhaka        
+#       # - CLI_ARGS= #optional
+#     volumes:
+#       - ./duplicati:/config
+#       - ~/backups:/backups
+#       - ~/storage/private:/source
+#     ports:
+#       - 8201:8200
+#     restart: unless-stopped
+#   
+# networks:
+#   public-net:
+#     external: true
+#     name: public-net
+

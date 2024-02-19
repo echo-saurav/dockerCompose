@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+  openspeed:
+    container_name: openspeed
+    image: openspeedtest/latest
+    ports:
+      - "3003:3000"
+      - "3002:3001"
+    environment:
+      - TZ=Asia/Dhaka        
+    restart: unless-stopped
+    networks:
+      - public-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.openspeed.rule=Host(`${duck}`, `${public_ip}`, `${local_ip}`) && (PathPrefix(`/speed`) || PathPrefix(`/assets`) || PathPrefix(`/upload`) || PathPrefix(`/download`))"
+      - "traefik.http.routers.openspeed.entrypoints=web"
+      # - 'traefik.http.routers.openspeed.tls=true'
+      - "traefik.http.middlewares.openspeed-strip.stripprefix.prefixes=/speed"
+      - "traefik.http.routers.openspeed.middlewares=openspeed-strip"
+      - "traefik.http.services.openspeed.loadbalancer.server.port=3000"
+
+networks:
+  public-net:
+    external: true
+    name: public-net

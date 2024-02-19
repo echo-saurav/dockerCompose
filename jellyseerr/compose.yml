@@ -1,0 +1,31 @@
+version: '3'
+services:
+  jellyseerr:
+     image: fallenbagel/jellyseerr:latest
+     container_name: jellyseerr
+     networks:
+        - public-net
+     environment:
+      - LOG_LEVEL=debug
+      - TZ=Asia/Dhaka
+     ports:
+      - 5055:5055
+     volumes:
+      - ./appdata:/app/config
+     restart: unless-stopped
+     labels:
+        - traefik.enable=true
+        # https
+        - traefik.http.routers.jellyseerr.rule=Host(`${duck}`)
+        - traefik.http.routers.jellyseerr.entrypoints=websecure
+        - traefik.http.routers.jellyseerr.tls=true
+        - traefik.http.services.jellyseerr.loadbalancer.server.port=5055
+        # http
+        - traefik.http.routers.jellyseerr-insecure.rule=Host(`${duck}`)
+        - traefik.http.routers.jellyseerr-insecure.entrypoints=web
+
+networks:
+  public-net:
+    external: true
+    name: public-net
+

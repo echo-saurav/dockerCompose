@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  cloud-proxy:
+    image: ghcr.io/kab1r/cloudflare-warp-container:centos-main
+    container_name: cloud-proxy
+    ports:
+      - 40001:40001
+    restart: unless-stopped
+
+
+networks:
+  public-net:
+    external: true
+    name: public-net

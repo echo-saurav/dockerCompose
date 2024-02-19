@@ -1,0 +1,34 @@
+version: "2"
+services:
+  ytdl_material:
+    container_name: youtube-dl
+    environment: 
+      ytdl_mongodb_connection_string: 'mongodb://ytdl-mongo-db:27017'
+      ytdl_use_local_db: 'false'
+      write_ytdl_config: 'true'
+      UID: $(UID)
+      GID: $(GID)
+    restart: always
+    depends_on:
+      - ytdl-mongo-db
+    volumes:
+      - ./appdata:/app/appdata
+      - ~/storage/public/audio/youtube-dl:/app/audio
+      - ~/storage/private/youtube-dl:/app/video
+      - ./subscriptions:/app/subscriptions
+      - ./users:/app/users
+    ports:
+      - "8998:17442"
+    image: tzahi12345/youtubedl-material:latest
+
+  ytdl-mongo-db:
+    image: mongo:4
+    container_name: ytdl-mongo-db
+    # logging:
+    #     driver: "none"          
+    restart: unless-stopped
+    volumes:
+        - ./db/:/data/db
+
+
+

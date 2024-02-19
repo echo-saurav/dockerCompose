@@ -1,0 +1,33 @@
+version: '3'
+
+services:
+  nginx:
+    image: nginx
+    container_name: nginx-fun
+    networks:
+      - public-net
+    environment:
+      - PUID=$(UID)
+      - PGID=$(GID)
+      - TZ=Asia/Dhaka
+    volumes:
+      - ./docs:/usr/share/nginx/html/fun-site
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf  
+    ports:
+      - 2322:80
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nginx-fun.rule=Host(`${duck}`, `${ngrok}`, `${public_ip}`, `${local_ip}`) && PathPrefix(`/fun-site`)"      
+      - "traefik.http.routers.nginx.entrypoints=web"
+      # https
+      - "traefik.http.routers.nginx-fun-secure.rule=Host(`${duck}`, `${ngrok}`, `${public_ip}`, `${local_ip}`) && PathPrefix(`/fun-site`)"      
+      - "traefik.http.routers.nginx-fun-secure.entrypoints=websecure"
+      - 'traefik.http.routers.nginx-fun-secure.tls=true'      
+
+networks:
+  public-net:
+    external: true
+    name: public-net
+
+

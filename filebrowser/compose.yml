@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  filebrowser-media:
+    image: filebrowser/filebrowser:s6
+    restart: unless-stopped
+    container_name: filebrowser-media
+    networks:
+      - public-net
+    environment:
+      - PUID=$(UID)
+      - PGID=$(GID)
+      - TZ=Asia/Dhaka
+      - FB_BASEURL=/filebrowser
+    ports:
+      - 6760:80
+    volumes:
+      - ~/storage/public/:/srv
+      - ./filebrowser-media/filebrowser.db:/database/filebrowser.db
+      - ./filebrowser-media/settings.json:/config/settings.json
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.fb-media.rule=Host(`${duck}` ,`${public_ip}`, `${local_ip}`) && PathPrefix(`/filebrowser`)"
+      - "traefik.http.routers.fb-media.entrypoints=web"
+      # - "traefik.http.services.fb-media.loadbalancer.server.port=80"      
+      # https
+      - "traefik.http.routers.fb-secure-media.rule=Host(`${duck}` , `${public_ip}`, `${local_ip}`) && PathPrefix(`/filebrowser`)"      
+      - "traefik.http.routers.fb-secure-media.entrypoints=websecure"
+      # - "traefik.http.services.fb-secure-media.loadbalancer.server.port=80"      
+      - 'traefik.http.routers.fb-secure-media.tls=true'      
+
+
+networks:
+  public-net:
+    external: true
+    name: public-net
+
+

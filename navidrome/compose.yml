@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+  navidrome:
+    container_name: navidrome
+    image: deluan/navidrome:latest
+    user: "${UID}:${GID}" # should be owner of volumes
+    ports:
+      - 4533:4533
+    restart: unless-stopped
+    networks:
+      - public-net
+    environment:
+    # Optional: put your config options customization here. Examples
+      # - ND_SCANSCHEDULE: 1h
+      # - ND_LOGLEVEL: info  
+      # - ND_SESSIONTIMEOUT= 24h
+      - ND_BASEURL=/navmusic
+    volumes:
+      - ./navidrome:/data
+      - ~/storage/public/audio/songs/:/music:ro
+    labels:
+      - "traefik.enable=true"  
+      - "traefik.http.routers.navidrome-insecure.rule=Host(`${duck}`, `${local_ip}`, `${public_ip}`) && PathPrefix(`/navmusic`)"      
+      - "traefik.http.routers.navidrome-insecure.entrypoints=web"
+      # https
+      - "traefik.http.routers.navidrome.rule=Host(`${duck}`, `${ngrok}`, `${local_ip}`, `${public_ip}`) && PathPrefix(`/navmusic`)"      
+      - "traefik.http.routers.navidrome.entrypoints=websecure"
+      - "traefik.http.services.navidrome.loadbalancer.server.port=4533"      
+      - 'traefik.http.routers.navidrome.tls=true'      
+
+networks:
+  public-net:
+    external: true
+    name: public-net
+

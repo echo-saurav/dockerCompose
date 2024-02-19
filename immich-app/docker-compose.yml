@@ -4,21 +4,34 @@ services:
   immich-server:
     container_name: immich_server
     image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
+    ports:
+      - 2283:3001
     networks:
       - public-net
     command: ["start.sh", "immich"]
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - ${UPLOAD_LOCATION}:/usr/src/app/upload
       - ~/storage/private/photos/:/mnt/media/private-photos:ro
       - ~/storage/private/macbook/:/mnt/media/macbook:ro
-      - /etc/localtime:/etc/localtime:ro
+      - ~/storage/private/obsidian/ObsidianNotes/media:/mnt/media/obsidian:ro
+      - ~/storage/private/youtube-dl:/mnt/media/youtube-dl:ro
     env_file:
       - .env
     depends_on:
       - redis
-      - database
-      - typesense
+      # - database
     restart: always
+    labels:
+      - "traefik.enable=true"
+      # https
+      - "traefik.http.routers.immich.rule=Host(`${duck}`)"
+      - "traefik.http.routers.immich.entrypoints=websecure"
+      - 'traefik.http.routers.immich.tls=true'
+      - "traefik.http.services.immich.loadbalancer.server.port=3001"
+      # http
+      - "traefik.http.routers.immich-insecure.rule=Host(`${duck}`)"      
+      - "traefik.http.routers.immich-insecure.entrypoints=web"
 
   immich-microservices:
     container_name: immich_microservices
@@ -30,15 +43,17 @@ services:
       service: hwaccel
     command: ["start.sh", "microservices"]
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - ${UPLOAD_LOCATION}:/usr/src/app/upload
       - ~/storage/private/photos/:/mnt/media/private-photos:ro
-      - /etc/localtime:/etc/localtime:ro
+      - ~/storage/private/macbook/:/mnt/media/macbook:ro
+      - ~/storage/private/obsidian/ObsidianNotes/media:/mnt/media/obsidian:ro
+      - ~/storage/private/youtube-dl:/mnt/media/youtube-dl:ro
     env_file:
       - .env
     depends_on:
       - redis
-      - database
-      - typesense
+      # - database
     restart: always
 
   immich-machine-learning:
@@ -52,39 +67,16 @@ services:
       - .env
     restart: always
 
-  immich-web:
-    container_name: immich_web
-    networks:
-      - public-net
-    image: ghcr.io/immich-app/immich-web:${IMMICH_VERSION:-release}
-    env_file:
-      - .env
-    restart: always
-
-  typesense:
-    container_name: immich_typesense
-    networks:
-      - public-net
-    image: typesense/typesense:0.24.1@sha256:9bcff2b829f12074426ca044b56160ca9d777a0c488303469143dd9f8259d4dd
-    environment:
-      - TYPESENSE_API_KEY=${TYPESENSE_API_KEY}
-      - TYPESENSE_DATA_DIR=/data
-      # remove this to get debug messages
-      - GLOG_minloglevel=1
-    volumes:
-      - ${docker_data_dir}/typesense:/data
-    restart: always
-
   redis:
     container_name: immich_redis
     networks:
       - public-net
-    image: redis:6.2-alpine@sha256:70a7a5b641117670beae0d80658430853896b5ef269ccf00d1827427e3263fa3
+    image: redis:6.2-alpine@sha256:c5a607fb6e1bb15d32bbcf14db22787d19e428d59e31a5da67511b49bb0f1ccc
     restart: always
 
   database:
     container_name: immich_postgres
-    image: postgres:14-alpine@sha256:28407a9961e76f2d285dc6991e8e48893503cc3836a4755bbc2d40bcc272a441
+    image: tensorchord/pgvecto-rs:pg14-v0.1.11@sha256:0335a1a22f8c5dd1b697f14f079934f5152eaaa216c09b61e293be285491f8ee
     env_file:
       - .env
     networks:
@@ -96,23 +88,6 @@ services:
     volumes:
       - ${docker_data_dir}/database:/var/lib/postgresql/data
     restart: always
-
-  immich-proxy:
-    container_name: immich_proxy
-    networks:
-      - public-net
-    image: ghcr.io/immich-app/immich-proxy:${IMMICH_VERSION:-release}
-    ports:
-      - 2283:8080
-    depends_on:
-      - immich-server
-      - immich-web
-    restart: always
-
-# volumes:
-#   pgdata:
-#   model-cache:
-#   tsdata:
 
 
 networks:

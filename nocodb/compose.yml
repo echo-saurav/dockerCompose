@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+  nocodb:
+    image: nocodb/nocodb:latest
+    container_name: nocodb
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Dhaka
+    volumes:
+      - ./nocodb:/usr/app/data/    
+    ports:
+      - 3333:8080
+    restart: unless-stopped
+    networks:
+      - public-net                    
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.nocodb.rule=Host(`nocodb.home`)"      
+    #   - "traefik.http.routers.nocodb.entrypoints=web"
+    #   - "traefik.http.services.nocodb.loadbalancer.server.port=8080" 
+
+networks:
+  public-net:
+    external: true
+    name: public-net
+

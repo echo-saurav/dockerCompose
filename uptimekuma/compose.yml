@@ -1,0 +1,33 @@
+version: '3'
+
+services:
+  uptimekuma:
+    image: louislam/uptime-kuma:latest
+    container_name: uptimekuma
+    environment:
+      - TZ=Asia/Dhaka
+    volumes:
+      - ./uptime-kuma:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock  
+    ports:
+      - 3001:3001
+    restart: unless-stopped
+    networks:
+      - public-net
+    labels:
+      - traefik.enable=true
+      # https
+      - traefik.http.routers.uptime.rule=Host(`${duck}`) 
+      - traefik.http.routers.uptime.entrypoints=websecure
+      - traefik.http.routers.uptime.tls=true     
+      - traefik.http.services.uptime.loadbalancer.server.port=3001
+      # http
+      - traefik.http.routers.uptime-insecure.rule=Host(`${duck}`)
+      - traefik.http.routers.uptime-insecure.entrypoints=web
+
+networks:
+  public-net:
+    external: true
+    name: public-net
+
+

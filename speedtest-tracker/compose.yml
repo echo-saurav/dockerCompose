@@ -1,0 +1,52 @@
+
+version: '3'
+
+services:
+  speedtest-tracker:
+    container_name: speedtest-tracker
+    image: 'ghcr.io/alexjustesen/speedtest-tracker:latest'
+    environment:
+      - PUID=$(UID)
+      - PGID=$(GID)
+      - TZ=Asia/UTC                
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db-speed
+      - DB_PORT=5432
+      - DB_DATABASE=speedtest_tracker
+      - DB_USERNAME=speedy
+      - DB_PASSWORD=password
+    ports:
+      - "3009:80"      
+      - "3019:443"      
+    networks:
+      - public-net
+    volumes:
+      - ./speed/config:/config
+      - ./speed/web:/etc/ssl/web
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    depends_on:
+      - db-speed
+    
+  db-speed:
+    image: postgres:15
+    container_name: db-speed
+    restart: unless-stopped
+    networks:
+      - public-net
+    environment:
+      - POTGRES_DB=speedtest_tracker
+      - POSTGRES_USER=speedy
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - speedtest-db:/var/lib/postgresql/data
+
+volumes:
+  speedtest-db:
+
+networks:
+  public-net:
+    external: true
+    name: public-net
+
+

@@ -1,0 +1,22 @@
+version: '3'
+
+services:
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf
+    container_name: audiobookshelf
+    ports:
+      - 13378:80
+    volumes:
+      - ~/storage/public/audio/audiobooks:/audiobooks
+      - ~/storage/public/audio/podcasts:/podcasts
+      - ./audiobookshelf/metadata:/metadata
+      - ./audiobookshelf/config:/config
+    restart: unless-stopped
+    networks:
+      - public-net
+
+networks:
+  public-net:
+    external: true
+    name: public-net
+

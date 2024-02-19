@@ -1,0 +1,39 @@
+version: '3'
+
+services:
+  transmission:
+    image: lscr.io/linuxserver/transmission:latest
+    container_name: transmission
+    networks:
+      - public-net
+    environment:
+      - PUID=$(UID)
+      - PGID=$(GID)
+      - TZ=Asia/Dhaka
+      - TRANSMISSION_WEB_HOME=/transmissionic/ #optional
+      - USER=${USER}
+      - PASS=${PASS}
+      - WHITELIST= #optional
+      - PEERPORT= #optional
+      - HOST_WHITELIST= #optional
+    volumes:
+      - ./transmission/:/config
+      - ./transmissionic-webui-v1.8.0/:/transmissionic/
+      - ~/storage/public/downloads/:/downloads
+      - ~/storage/public/watchTorrents/:/watch
+    ports:
+      - 9092:9091
+      - 51413:51413
+      - 51413:51413/udp
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"  
+      - "traefik.http.routers.transmission.rule=Host(`${duck}`, `${local_ip}`) && PathPrefix(`/transmission`)"
+      - "traefik.http.routers.transmission.entrypoints=web"
+      - "traefik.http.services.transmission.loadbalancer.server.port=9091"    
+
+networks:
+  public-net:
+    external: true
+    name: public-net
+

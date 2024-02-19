@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  scrutiny:
+    stdin_open: true
+    restart: unless-stopped
+    tty: true
+    ports:
+      - 8083:8080
+      # - 8087:8086
+    volumes:
+      - ./scrutiny/config:/opt/scrutiny/config
+      - ./scrutiny/influxdb2:/opt/scrutiny/influxdb
+      - /run/udev:/run/udev:ro
+    cap_add:
+      - SYS_RAWIO
+    devices:
+      - /dev/sda
+    container_name: scrutiny
+    networks:
+      - public-net
+    image: ghcr.io/analogj/scrutiny:master-omnibus
+
+networks:
+  public-net:
+    external: true
+    name: public-net
+
+

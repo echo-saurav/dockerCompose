@@ -1,0 +1,51 @@
+version: '3'
+
+services:
+  webtop:
+    # image: lscr.io/linuxserver/webtop:latest
+    image: lscr.io/linuxserver/webtop:arch-kde
+    container_name: webtop
+    networks:
+      - public-net
+    security_opt:
+      - seccomp:unconfined #optional
+    environment:
+      - PUID=$(UID)
+      - PGID=$(GID)
+      - TZ=Asia/Dhaka
+      - SUBFOLDER=/ #optional
+      # - SUBFOLDER=/webtop #optional
+      - TITLE=Arch #optional
+    volumes:
+      - ./webtop:/config
+      - ~/storage/public/movies:/config/Movies
+      - ~/storage/public/tvSeries:/config/TVSeries
+      - /dev/dri:/dev/dri
+      # - /var/run/docker.sock:/var/run/docker.sock #optional
+    ports:
+      - 3757:3000
+      - 3011:3001
+    devices:
+      - /dev/dri:/dev/dri #optional
+      - /dev/snd:/dev/snd
+    shm_size: "1gb" #optional
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      # https
+      - traefik.http.routers.webtop.rule=Host(`${duck}`) && (PathPrefix(`/public`) || PathPrefix(`/webtop`) || PathPrefix(`/vnc`) || PathPrefix(`/webtopaudio`) || PathPrefix(`/websockify`) || PathPrefix(`/files`) || PathPrefix(`/audio`))
+      - traefik.http.routers.webtop.entrypoints=websecure
+      - traefik.http.routers.webtop.tls=true
+      - traefik.http.services.webtop.loadbalancer.server.port=3000
+      - traefik.http.middlewares.web-strip.stripprefix.prefixes=/webtop
+      - traefik.http.routers.webtop.middlewares=web-strip
+      # http
+      - traefik.http.routers.webtop-insecure.rule=Host(`${duck}`) && (PathPrefix(`/public`) || PathPrefix(`/webtop`) || PathPrefix(`/vnc`) || PathPrefix(`/webtopaudio`) || PathPrefix(`/websockify`) || PathPrefix(`/files`) || PathPrefix(`/audio`))
+      - traefik.http.routers.webtop-insecure.entrypoints=web
+      - traefik.http.routers.webtop-insecure.middlewares=web-strip
+
+networks:
+  public-net:
+    external: true
+    name: public-net
+
