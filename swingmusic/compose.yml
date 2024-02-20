@@ -1,0 +1,10 @@
+services:
+  swingmusic:
+    image: ghcr.io/swing-opensource/swingmusic:latest
+    container_name: swingmusic
+    volumes:
+      - ~/storage/public/audio/songs/:/music
+      - ./config:/config
+    ports:
+      - "1970:1970"
+    restart: unless-stopped
