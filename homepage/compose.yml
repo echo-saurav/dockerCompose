@@ -1,19 +1,19 @@
 version: '3'
 
 services:
-  homepage:
+  public-homepage:
     image: ghcr.io/gethomepage/homepage:latest
-    container_name: homepage
+    container_name: public-homepage 
     networks:
       - public-net
     restart: unless-stopped    
     depends_on:
       - dockerproxy
     ports:
-      - 1011:3000
+      - 1012:3000
     environment:
-      - PUID=$(UID)
-      - PGID=$(GID)
+      - PUID=${UID}
+      - PGID=${GID}
       - TZ=Asia/UTC      
       - HOMEPAGE_VAR_PAIRDROP=${HOMEPAGE_VAR_PAIRDROP}
       - HOMEPAGE_VAR_JELLY=${HOMEPAGE_VAR_JELLY}
@@ -25,24 +25,41 @@ services:
       - HOMEPAGE_VAR_RADARR=${RADARR_API}
       - HOMEPAGE_VAR_SONARR=${SONARR_API}
       - HOMEPAGE_VAR_PROWLARR=${PROWLARR_API}
+      - HOMEPAGE_VAR_JELLYSEERR=${JELLYSEERR_API}
+      - HOMEPAGE_VAR_IMMICH=${IMMICH_API}
+      - HOMEPAGE_VAR_DUCK=${HOMEPAGE_VAR_DUCK}
+      - HOMEPAGE_VAR_DUCK_IMMICH=${HOMEPAGE_VAR_DUCK_IMMICH}
+      - HOMEPAGE_VAR_DUCK_UPTIME=${HOMEPAGE_VAR_DUCK_UPTIME}
+      - HOMEPAGE_VAR_DUCK_JELLYSEERR=${HOMEPAGE_VAR_DUCK_JELLYSEERR}
     volumes:
       - ./config/:/app/config # Make sure your local config directory exists
-      - /home:/home:ro
-      # - /var/run/docker.sock:/var/run/docker.sock:ro # (optional) For docker integrations 
+      - ./images:/app/public/images
     labels:
-      - "traefik.enable=true"  
-      # http
-      - "traefik.http.routers.homepage.rule=Host(`${duck}`, `${local_ip}`, `${public_ip}`, `${ngrok}`) && (PathPrefix(`/homepage`) || PathPrefix(`/api`) || PathPrefix(`/_next`) || PathPrefix(`/site.webman`) || PathPrefix(`/android-chrome`) || PathPrefix(`/framework`))"
-      - "traefik.http.routers.homepage.entrypoints=web"
-      - "traefik.http.middlewares.homepage-strip.stripprefix.prefixes=/homepage"
-      - "traefik.http.routers.homepage.middlewares=homepage-strip"
+      - traefik.enable=true
       # https
-      - "traefik.http.routers.homepage-secure.rule=Host(`${duck}`, `${public_ip}`, `${ngrok}`) && (PathPrefix(`/homepage`) || PathPrefix(`/api`) || PathPrefix(`/_next`) || PathPrefix(`/site.webman`) || PathPrefix(`/android-chrome`) || PathPrefix(`/framework`))"
-      - "traefik.http.routers.homepage-secure.entrypoints=websecure"
-      # homepage-strip is set in http route
-      - "traefik.http.routers.homepage-secure.middlewares=homepage-strip"
-      - 'traefik.http.routers.homepage-secure.tls=true'            
-      - "traefik.http.services.homepage.loadbalancer.server.port=3000"    
+      - traefik.http.routers.homepage-public.rule=Host(`${duck}`)
+      - traefik.http.routers.homepage-public.entrypoints=websecure
+      - traefik.http.routers.homepage-public.tls=true
+      - traefik.http.services.homepage-public.loadbalancer.server.port=3000
+      # http
+      - traefik.http.routers.homepage-public-insecure.rule=Host(`${duck}`)
+      - traefik.http.routers.homepage-public-insecure.entrypoints=web
+
+
+    # labels:
+    #   - "traefik.enable=true"  
+    #   # http
+    #   - "traefik.http.routers.homepage.rule=Host(`${duck}`, `${local_ip}`, `${public_ip}`, `${ngrok}`) && (PathPrefix(`/homepage`) || PathPrefix(`/api`) || PathPrefix(`/_next`) || PathPrefix(`/site.webman`) || PathPrefix(`/android-chrome`) || PathPrefix(`/framework`))"
+    #   - "traefik.http.routers.homepage.entrypoints=web"
+    #   - "traefik.http.middlewares.homepage-strip.stripprefix.prefixes=/homepage"
+    #   - "traefik.http.routers.homepage.middlewares=homepage-strip"
+    #   # https
+    #   - "traefik.http.routers.homepage-secure.rule=Host(`${duck}`, `${public_ip}`, `${ngrok}`) && (PathPrefix(`/homepage`) || PathPrefix(`/api`) || PathPrefix(`/_next`) || PathPrefix(`/site.webman`) || PathPrefix(`/android-chrome`) || PathPrefix(`/framework`))"
+    #   - "traefik.http.routers.homepage-secure.entrypoints=websecure"
+    #   # homepage-strip is set in http route
+    #   - "traefik.http.routers.homepage-secure.middlewares=homepage-strip"
+    #   - 'traefik.http.routers.homepage-secure.tls=true'            
+    #   - "traefik.http.services.homepage.loadbalancer.server.port=3000"    
 
 
   dockerproxy:
@@ -57,9 +74,6 @@ services:
     - POST=0 # Disallow any POST operations (effectively read-only)
     ports:
     - 127.0.0.1:2375:2375
-    # environment:
-    #   - CONTAINERS=1 # Allow access to viewing containers
-    #   - POST=0 # Disallow any POST operations (effectively read-only)
     # ports:
     #   - 2375:2375
     volumes:

@@ -16,10 +16,12 @@ services:
       - SUBFOLDER=/ #optional
       # - SUBFOLDER=/webtop #optional
       - TITLE=Arch #optional
+      - PASSWORD=getin
+      - CUSTOM_USER=demo
     volumes:
       - ./webtop:/config
-      - ~/storage/public/movies:/config/Movies
-      - ~/storage/public/tvSeries:/config/TVSeries
+      # - ~/storage/public/movies:/config/Movies
+      # - ~/storage/public/tvSeries:/config/TVSeries
       - /dev/dri:/dev/dri
       # - /var/run/docker.sock:/var/run/docker.sock #optional
     ports:

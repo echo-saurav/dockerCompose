@@ -18,12 +18,12 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.nginx.rule=Host(`${duck}`, `${ngrok}`, `${public_ip}`, `${local_ip}`) && PathPrefix(`/welcome`)"      
-      - "traefik.http.routers.nginx.entrypoints=web"
+      - "traefik.http.routers.nginx-docs.rule=Host(`${duck}`, `${ngrok}`, `${public_ip}`, `${local_ip}`) && PathPrefix(`/welcome`)"      
+      - "traefik.http.routers.nginx-docs.entrypoints=web"
       # https
-      - "traefik.http.routers.nginx-secure.rule=Host(`${duck}`, `${ngrok}`, `${public_ip}`, `${local_ip}`) && PathPrefix(`/welcome`)"      
-      - "traefik.http.routers.nginx-secure.entrypoints=websecure"
-      - 'traefik.http.routers.nginx-secure.tls=true'      
+      - "traefik.http.routers.nginx-docs-secure.rule=Host(`${duck}`, `${ngrok}`, `${public_ip}`, `${local_ip}`) && PathPrefix(`/welcome`)"      
+      - "traefik.http.routers.nginx-docs-secure.entrypoints=websecure"
+      - 'traefik.http.routers.nginx-docs-secure.tls=true'      
 
 networks:
   public-net:

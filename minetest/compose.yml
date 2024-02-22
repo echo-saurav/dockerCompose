@@ -1,0 +1,18 @@
+---
+services:
+  minetest:
+    image: lscr.io/linuxserver/minetest:latest
+    container_name: minetest
+    environment:
+      - PUID=${UID}
+      - PGID=${GID}
+      - TZ=Asia/Dhaka
+      - "CLI_ARGS=--gameid mineclonia --port 30000" #optional
+    volumes:
+      - ./config:/config/.minetest
+    ports:
+      - 30000:30000/udp
+    restart: unless-stopped
+
+
+
